@@ -7,7 +7,7 @@ const Sidebar = () => {
     const [rooms, setRooms] = useState([])
     useEffect(() => {
         // loading rooms from firebase collection
-          db.collection('rooms').onSnapshot(snapshot => (
+         const unsubscribe = db.collection('rooms').onSnapshot(snapshot => (
               //get the rooms and add to setRoom so we can use it 
               setRooms(snapshot.docs.map(doc => 
                 
@@ -16,11 +16,12 @@ const Sidebar = () => {
                     id: doc.id,
                     // name of the room / data
                     data: doc.data() 
-                  
-                })
-                        
-                ))
+                })))
           ))  
+
+          return () => {
+            unsubscribe(); 
+            }
     },[])
     return (
         <div className='sidebar'>
