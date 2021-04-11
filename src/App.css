@@ -80,6 +80,10 @@ padding: 10px;
 .sidebarChat:hover{
   background-color: #ededed;
 }
+a{
+  text-decoration: none;
+  color: black;
+}
 .sidebarChat-info {
   margin-left: 15px;
 }
