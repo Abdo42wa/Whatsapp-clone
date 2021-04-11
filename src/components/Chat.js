@@ -4,18 +4,26 @@ import React,{useState,useEffect} from 'react'
 import MicIcon from '@material-ui/icons/Mic';
 import {useParams} from 'react-router-dom'
 import db from '../firebase';
+import { useSelector } from 'react-redux';
+import firebase from 'firebase'
 
 const Chat = () => {
     const [seed, setSeed] = useState('');
-    const [message,setMessage] = useState('')
+    const [userMessage,setUserMessage] = useState('')
     const [roomName, setRoomName] = useState('');
+    const [getMessages, setGetMessages] = useState([])
     const {roomId} = useParams('')
+    const user = useSelector((state) => state.user)
+    const { currentUser } = user;
 
     useEffect(() => {
         if(roomId) {
             
            db.collection('rooms').doc(roomId).onSnapshot((snapshot)=> setRoomName(snapshot.data().name))
                 
+            db.collection('rooms').doc(roomId).collection('messages').orderBy('timestamp', 'asc').onSnapshot((snapshot) => (
+                setGetMessages(snapshot.docs.map((doc)=> doc.data()))
+            ))
         }
         console.log(roomId);
 
@@ -27,7 +35,20 @@ const Chat = () => {
     }, [])
     const sendMessage = (e) => {
          e.preventDefault();
-         setMessage('');
+
+        db.collection("rooms").doc(roomId).collection("messages").add({
+            message: userMessage,
+            name: currentUser.username,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        console.log('msm: ', userMessage, 'name:' ,currentUser.username)
+        // db.collection("rooms").doc(roomId).collection("messages").add({
+        //     message: input,
+        //     name: user.displayName,
+        //     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        //   });
+
+         setUserMessage('');
     }
     return (
         <div className='chat'>
@@ -44,16 +65,19 @@ const Chat = () => {
                 </div>
             </div>
             <div className='chat-body'>
-                <p className={`chat-message ${true &&'chat-reciever'}`}>
-                <span className='chat-name'>abdo</span>
-                Hey Guys
-                <span className='chat-timestamp'>3:52pm</span>
+            {getMessages.map(sms => (
+                <p key={sms.id} className={`chat-message ${sms.name === currentUser.username &&'chat-reciever'}`}>
+                <span className='chat-name'>{sms.name}</span>
+                {sms.message}
+                <span className='chat-timestamp'>{new Date (sms.timestamp?.toDate()).toUTCString()}</span>
                 </p>
+            ))}
+               
             </div>
             <div className='chat-footer'>
                 <InsertEmoticon />
                     <form>
-                        <input type='text' value={message} onChange={(e) => setMessage(e.target.value)} placeholder='type a message'/>
+                        <input type='text' value={userMessage} onChange={(e) => setUserMessage(e.target.value)} placeholder='type a message'/>
                         <button type='submit' onClick={sendMessage}>Send message</button>
                     </form>
                 <MicIcon />
